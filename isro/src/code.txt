@@ -1,0 +1,138 @@
+#include "WiFi.h"
+#include "ESPAsyncWebServer.h"
+#include <SCServo.h>
+
+SMS_STS st;
+
+// the uart used to control servos.
+// GPIO 18 - S_RXD, GPIO 19 - S_TXD, as default.
+#define S_RXD 18
+#define S_TXD 19
+int servos[] = {0,1,2,3};
+const char* ssid = "Wadekar_4G";  //replace
+String dataIn = "";
+char buff[100];
+const char* password =  "9969148591"; //replace
+const char* PARAM_MESSAGE = "moveservo";
+
+int currentWristrPostion  = 90;
+int cureentGripperPostion = 0;
+AsyncWebServer server(80);
+int mapto360(int degree)
+{
+  int value  = map(degree,0,180,1024,3072);
+  return value;
+}
+void move_base_servo(int degree) {
+    // Determine the direction of movement
+    
+    st.WritePosEx(servos[0], mapto360(degree), 400, 100);//servo(ID1) speed=3400，acc=50，move to position=4095.
+    st.WritePosEx(servos[1], mapto360(180-degree), 400, 100);//servo(ID1) speed=3400，acc=50，move to position=4095.
+    sprintf(buff, "Servo 0 postion:%d  Servo 1 postion:%d", degree,180-degree);
+    Serial.println(buff);
+    // Move the base servos to the desired degree
+    
+}
+void move_shoulder_servo(int degree)
+{
+  st.WritePosEx(servos[2], mapto360(degree), 400, 50);//servo(ID1) speed=3400，acc=50，move to position=4095.
+  sprintf(buff, "Servo 2 postion:%d ", degree);
+    Serial.println(buff);
+}
+void move_elbow_servo(int degree)
+{
+  st.WritePosEx(servos[3], mapto360(degree), 400, 50);//servo(ID1) speed=3400，acc=50，move to position=4095.
+  sprintf(buff, "Servo 3 postion:%d ", degree);
+  Serial.println(buff);
+}
+void move_wrist_servo(int degree) {
+    // Determine the direction of movement
+    int step = (currentWristrPostion > degree) ? -1 : 1;
+
+    // Move the wrist to the desired degree
+    while (currentWristrPostion != degree) {
+        // wrist.write(currentWristrPostion);
+        currentWristrPostion += step;
+        Serial.print("wrist  ");
+        Serial.print("Position: ");
+        Serial.println(currentWristrPostion);
+        delay(15);
+        currentWristrPostion = constrain(currentWristrPostion,0,180);
+    }
+}
+void move_gripper_servo(int degree)
+{
+    int step = (cureentGripperPostion < degree) ? 1 : -1;
+    // 84 gripper close , 100 gripper open  
+    // Move the shoulder servo to the desired degree
+    while (cureentGripperPostion != degree) {
+        // gripper.write(cureentGripperPostion);
+        cureentGripperPostion += step;
+        Serial.print("Gripper  ");
+        Serial.print("Position: ");
+        Serial.println(cureentGripperPostion);
+        delay(15);
+        cureentGripperPostion = constrain(cureentGripperPostion,84,100);
+    }
+}
+void ServoControl(String msg)
+{
+  
+  String dataInS = msg.substring(1, msg.length());
+  int degree = dataInS.toInt();
+  if(msg[0]=='b')
+  {
+    move_base_servo(degree);
+  }
+  else if(msg[0]=='s')
+  {
+    move_shoulder_servo(degree);
+  }
+  else if(msg[0]=='e')
+  {
+    move_elbow_servo(degree);
+  }
+  else if(msg[0]=='w')
+  {
+    move_wrist_servo(degree);
+  }
+  else if(msg[0]=='g')
+  {
+    move_gripper_servo(degree);
+  }
+
+}
+
+void setup(){
+
+  
+  Serial.begin(115200);
+  Serial1.begin(1000000, SERIAL_8N1, S_RXD, S_TXD);
+  st.pSerial = &Serial1;
+  
+
+  WiFi.begin(ssid, password);
+ 
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi..");
+  }
+ 
+  Serial.println(WiFi.localIP());
+  server.on("/get", HTTP_GET, [] (AsyncWebServerRequest *request) {
+    String message;
+    if (request->hasParam(PARAM_MESSAGE)) {
+      message = request->getParam(PARAM_MESSAGE)->value();
+      ServoControl(message);
+    } else {
+      message = "No message sent";
+    }
+    
+    request->send(200, "text/plain", "Hello, GET: " + message);
+  });
+
+  server.begin();
+}
+void loop(){
+
+}
