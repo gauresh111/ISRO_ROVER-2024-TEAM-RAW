@@ -5,19 +5,19 @@ import './slidebar.css';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import axios from "axios";
-import { maxWidth } from '@mui/system';
 
 function SliderSizes({ props }) {
   const [value, setValue] = React.useState(90);
   const handleChange = (event, newValue) => {
     if (typeof newValue === 'number') {
       setValue(newValue);
-      console.log(props.id, newValue);
+      
       let value = props.id + newValue
       // const myNumber = "base123";
       // const ipAddress = '192.168.29.153';
 
-      const url = 'http://192.168.29.153/get?moveservo=' + value;
+      const url = 'http://'+ props.url +'/get?moveservo=' + value;
+      console.log(props.id, newValue,url);
       axios.get(url)
         .then(response => {
           console.log('Status:', response.status);
@@ -61,11 +61,11 @@ export default function numberofSlider() {
       gap={5}
       
     >
-      <SliderSizes props={{ id: "b", name: "base" }} />
-      <SliderSizes props={{ id: "s", name: "shoulder" }} />
-      <SliderSizes props={{ id: "e", name: "elbow" }} />
-      <SliderSizes props={{ id: "w", name: "wrist" }} />
-      <SliderSizes props={{ id: "g", name: "gripper" }} />
+      <SliderSizes props={{ id: "b", name: "base" , url:"192.168.4.1" }} />
+      <SliderSizes props={{ id: "s", name: "shoulder" ,url:"192.168.4.1"}} />
+      <SliderSizes props={{ id: "e", name: "elbow" ,url:"192.168.4.1"}} />
+      <SliderSizes props={{ id: "w", name: "wrist" ,url:"192.168.4.2"}} />
+      <SliderSizes props={{ id: "g", name: "gripper",url:"192.168.4.3" }} />
     </Grid>
   );
 }

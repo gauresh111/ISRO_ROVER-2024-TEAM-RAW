@@ -5,18 +5,27 @@ import { Grid } from '@mui/material';
 const ServoData = () => {
     const [data, setData] = useState(null);
     const [error, setError] = useState(null);
-    
+
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await axios.get('http://192.168.29.153/servoData');
+                const response = await axios.get('http://192.168.4.1/servoData');
                 setData(response.data);
             } catch (error) {
                 setError(error);
             }
         };
 
-        fetchData();
+        
+        const interval = setInterval(() => {
+            // This code will execute every second
+            // Put your desired effect or action here
+            fetchData();
+            console.log('Effect activated!');
+          }, 1000); // 1000 milliseconds = 1 second
+      
+          // Cleanup function to clear the interval when the component unmounts
+          return () => clearInterval(interval);
     }, []);
 
     if (error) {
@@ -31,8 +40,10 @@ const ServoData = () => {
     return (
         <div>
             <h2>Servo Data</h2>
+            {data &&(
             <Grid container direction="row"  justifyContent='space-around'>
-                {data.servos.map((servo, index) => (
+                {
+                data.servos.map((servo, index) => (
                     <Grid item>
                         <div key={index}>
                             <h3>Servo {servo.servoId}</h3>
@@ -50,6 +61,7 @@ const ServoData = () => {
                                                         
                 ))}
             </Grid>
+            )}
         </div>
     );
 };
